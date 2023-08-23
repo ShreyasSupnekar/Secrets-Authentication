@@ -1,26 +1,38 @@
-<!DOCTYPE html>
-<html>
+import express from "express";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import bodyParser from "body-parser";
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
-<head>
-  <title>Lisper</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&family=Titan+One&display=swap"
-    rel="stylesheet">
-  <link rel="stylesheet" type="text/css" href="styles/main.css">
+const app = express();
+const port = 3000;
+var userIsAuthorised = false;
 
-</head>
+app.use(bodyParser.urlencoded({extended: true}));
 
-<body>
-  <h1>What's your secret?</h1>
-  <div class="card">
-    <p>
-      <%= secret %>
-    </p>
-  </div>
-  <p class="user">
-    <%= user %>
-  </p>
-</body>
+function openSecretFile(req,res,next) {
+    const password = req.body["password"];
+    if (password === "ILoveProgramming") {
+        userIsAuthorised = true;
+    }
+    next();
+}
 
-</html>
+app.use(openSecretFile);
+
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/public/index.html");
+});
+
+app.post("/check", (req, res) => {
+  if (userIsAuthorised) {
+    res.sendFile(__dirname + "/public/secret.html");
+  } else {
+    res.sendFile(__dirname + "/public/index.html");
+    //Alternatively res.redirect("/");
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Listening on port ${port}`);
+});
