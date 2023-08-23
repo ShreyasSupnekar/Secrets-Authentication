@@ -1,32 +1,38 @@
-// HINTS:
-// 1. Import express and axios
 import express from "express";
-import axios from "axios";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import bodyParser from "body-parser";
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// 2. Create an express app and set the port number.
-const app=express();
-const port=3000;
+const app = express();
+const port = 3000;
+var userIsAuthorised = false;
 
-// 3. Use the public folder for static files.
-app.use(express.static("public"));
+app.use(bodyParser.urlencoded({extended: true}));
 
-// 4. When the user goes to the home page it should render the index.ejs file.
-app.get("/", async(req,res)=>{
-// 5. Use axios to get a random secret and pass it to index.ejs to display the
-// secret and the username of the secret.
-    try{
-        const randomSecret=await axios.get("https://secrets-api.appbrewery.com/random")
-        const secret=randomSecret.data.secret;
-        const user=randomSecret.data.username;
-        res.render("index.ejs", {secret: secret, user: user});
-    }    
-    catch (error) {
-        console.log(error.response.data);
-        res.status(500);
+function openSecretFile(req,res,next) {
+    const password = req.body["password"];
+    if (password === "ILoveProgramming") {
+        userIsAuthorised = true;
     }
+    next();
+}
+
+app.use(openSecretFile);
+
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/public/index.html");
 });
 
-// 6. Listen on your predefined port and start the server.
-app.listen(port,()=>{
-    console.log('server on port ${port}');
+app.post("/check", (req, res) => {
+  if (userIsAuthorised) {
+    res.sendFile(__dirname + "/public/secret.html");
+  } else {
+    res.sendFile(__dirname + "/public/index.html");
+    //Alternatively res.redirect("/");
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Listening on port ${port}`);
 });
